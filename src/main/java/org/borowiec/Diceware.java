@@ -1,6 +1,7 @@
 package org.borowiec;
 
 import org.borowiec.exception.InvalidParameterException;
+import org.borowiec.exception.InvalidWordCountException;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -78,7 +79,7 @@ public class Diceware {
         return generatedCode.toString();
     }
 
-    void readWordList() throws IOException, InvalidParameterException {
+    void readWordList() throws IOException, InvalidWordCountException {
         BufferedReader reader = new BufferedReader(
                 new FileReader(wordListFile)
         );
@@ -94,7 +95,7 @@ public class Diceware {
         }
 
         if (codeToWord.size() != 7776) {
-            throw new InvalidParameterException(INVALID_WORD_COUNT + codeToWord.size());
+            throw new InvalidWordCountException(INVALID_WORD_COUNT + codeToWord.size());
         }
     }
 
@@ -122,7 +123,9 @@ public class Diceware {
 
     private void printUsage() {
         System.out.println("Usage: ");
-        System.out.println(String.format("java Diceware %s %s", MIN_PASSWORD_LENGTH_PARAM_NAME, WORD_LIST_FILE_NAME_PARAM_NAME));
+        System.out.println(String.format(
+                "java -jar diceware.jar %s %s", MIN_PASSWORD_LENGTH_PARAM_NAME, WORD_LIST_FILE_NAME_PARAM_NAME)
+        );
         System.out.println();
         System.out.println("Parameters:");
         System.out.println(MIN_PASSWORD_LENGTH_PARAM_NAME + " - minimum length of generated password");

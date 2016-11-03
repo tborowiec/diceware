@@ -1,6 +1,7 @@
 package org.borowiec;
 
 import org.borowiec.exception.InvalidParameterException;
+import org.borowiec.exception.InvalidWordCountException;
 import org.junit.Test;
 
 import java.io.File;
@@ -89,17 +90,17 @@ public class DicewareTest {
     }
 
     @Test
-    public void shouldThrowException_forInvalidFile() throws IOException, InvalidParameterException {
+    public void shouldThrowException_forInvalidFile() throws IOException, InvalidWordCountException {
         diceware.wordListFile = new File(INVALID_FILE_NAME);
 
         Throwable thrown = catchThrowable(() -> diceware.readWordList());
 
-        assertThat(thrown).isInstanceOf(InvalidParameterException.class)
+        assertThat(thrown).isInstanceOf(InvalidWordCountException.class)
                 .hasMessageStartingWith(Diceware.INVALID_WORD_COUNT);
     }
 
     @Test
-    public void shouldReadWordList_forExistingFile() throws IOException, InvalidParameterException {
+    public void shouldReadWordList_forExistingFile() throws IOException, InvalidWordCountException {
         diceware.wordListFile = new File(VALID_FILE_NAME);
 
         diceware.readWordList();
