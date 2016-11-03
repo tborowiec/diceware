@@ -2,121 +2,92 @@ package org.borowiec;
 
 import org.borowiec.exception.InvalidParameterException;
 import org.borowiec.exception.InvalidWordCountException;
+import org.borowiec.generator.DicewarePasswordGenerator;
+import org.borowiec.reader.DicewareWordListFileReader;
+import org.borowiec.validator.DicewareArgsValidator;
+import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.runners.MockitoJUnitRunner;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.regex.Pattern;
+import java.io.PrintStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.catchThrowable;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.*;
 
+@RunWith(MockitoJUnitRunner.class)
 public class DicewareTest {
 
-    private static final String VALID_FILE_NAME = DicewareTest.class.getClassLoader().getResource("eff_large_wordlist.txt").getPath();
-    private static final String INVALID_FILE_NAME = DicewareTest.class.getClassLoader().getResource("example_word_list.txt").getPath();
+    @Mock
+    private DicewareArgsValidator argsValidator;
+    @Mock
+    private DicewareWordListFileReader wordListFileReader;
+    @Mock
+    private DicewarePasswordGenerator passwordGenerator;
 
-    private static final Pattern CODE_PATTERN = Pattern.compile("^[1-6]{" + Diceware.CODE_DIGITS + "}");
+    @Mock
+    private PrintStream printStream;
 
-    private Diceware diceware = new Diceware();
+    private StringBuilder outputBuffer;
 
-    @Test
-    public void shouldThrowException_whenEmptyArgsArray() throws InvalidParameterException {
-        Throwable thrown = catchThrowable(() -> diceware.validateAndAssignInputParameters(new String[0]));
+    private Diceware diceware;
 
-        assertThat(thrown).isInstanceOf(InvalidParameterException.class)
-                .hasMessage(Diceware.INVALID_NUMBER_OF_PARAMETERS);
+    @Before
+    public void before() {
+        outputBuffer = new StringBuilder();
+
+        doAnswer((invocationOnMock) -> outputBuffer.append(invocationOnMock.getArgumentAt(0, String.class)).append("\n"))
+                .when(printStream).println(anyString());
+
+        System.setOut(printStream);
+
+        diceware = new Diceware(argsValidator, wordListFileReader, passwordGenerator);
     }
 
     @Test
-    public void shouldThrowException_whenOneElementArgsArray() throws InvalidParameterException {
-        Throwable thrown = catchThrowable(() -> diceware.validateAndAssignInputParameters(new String[]{"1"}));
+    public void shouldPrintErrorAndUsage_whenValidationException() throws InvalidParameterException {
+        doThrow(new InvalidParameterException("message")).when(argsValidator).validate(any());
 
-        assertThat(thrown).isInstanceOf(InvalidParameterException.class)
-                .hasMessage(Diceware.INVALID_NUMBER_OF_PARAMETERS);
+        diceware.run(new String[0]);
+
+        assertErrorAndUsagePrinted();
     }
 
     @Test
-    public void shouldThrowException_whenMoreThanTwoElementArgsArray() throws InvalidParameterException {
-        Throwable thrown = catchThrowable(() -> diceware.validateAndAssignInputParameters(new String[]{"1", "2", "3"}));
+    public void shouldPrintErrorAndUsage_whenIOException() throws Exception {
+        when(wordListFileReader.read(any(File.class))).thenThrow(new IOException("message"));
 
-        assertThat(thrown).isInstanceOf(InvalidParameterException.class)
-                .hasMessage(Diceware.INVALID_NUMBER_OF_PARAMETERS);
+        diceware.run(new String[]{"1", "filename"});
+
+        assertErrorAndUsagePrinted();
     }
 
     @Test
-    public void shouldThrowException_whenFirstArgumentNotAnInteger() throws InvalidParameterException {
-        Throwable thrown = catchThrowable(() -> diceware.validateAndAssignInputParameters(new String[]{"a", "b"}));
+    public void shouldPrintErrorAndUsage_whenInvalidWordCountException() throws Exception {
+        when(wordListFileReader.read(any(File.class))).thenThrow(new InvalidWordCountException("message"));
 
-        assertThat(thrown).isInstanceOf(InvalidParameterException.class)
-                .hasMessage(Diceware.MIN_PASSWORD_LENGTH_NOT_A_NUMBER);
+        diceware.run(new String[]{"1", "filename"});
+
+        assertErrorAndUsagePrinted();
     }
 
     @Test
-    public void shouldThrowException_whenSecondArgumentNull() throws InvalidParameterException {
-        Throwable thrown = catchThrowable(() -> diceware.validateAndAssignInputParameters(new String[]{"1", null}));
+    public void shouldPrintResult_forHappyPath() throws Exception {
+        when(passwordGenerator.generatePassword(anyInt(), anyMapOf(String.class, String.class))).thenReturn("test");
 
-        assertThat(thrown).isInstanceOf(InvalidParameterException.class)
-                .hasMessage(Diceware.FILE_NAME_IS_EMPTY);
+        diceware.run(new String[]{"1", "filename"});
+
+        assertThat(outputBuffer.toString()).isEqualTo("Generated password: test\nPassword length: 4\n");
     }
 
-    @Test
-    public void shouldThrowException_whenSecondArgumentIsEmpty() throws InvalidParameterException {
-        Throwable thrown = catchThrowable(() -> diceware.validateAndAssignInputParameters(new String[]{"1", ""}));
-
-        assertThat(thrown).isInstanceOf(InvalidParameterException.class)
-                .hasMessage(Diceware.FILE_NAME_IS_EMPTY);
-    }
-
-    @Test
-    public void shouldThrowException_whenSecondArgumentIsBlank() throws InvalidParameterException {
-        Throwable thrown = catchThrowable(() -> diceware.validateAndAssignInputParameters(new String[]{"1", "  "}));
-
-        assertThat(thrown).isInstanceOf(InvalidParameterException.class)
-                .hasMessage(Diceware.FILE_NAME_IS_EMPTY);
-    }
-
-    @Test
-    public void shouldThrowException_whenSecondArgumentIsNotAFileName() throws InvalidParameterException {
-        Throwable thrown = catchThrowable(() -> diceware.validateAndAssignInputParameters(new String[]{"1", "2"}));
-
-        assertThat(thrown).isInstanceOf(InvalidParameterException.class)
-                .hasMessageStartingWith(Diceware.NOT_A_FILE);
-    }
-
-    @Test
-    public void shouldSetParameters_forHappyPath() throws InvalidParameterException {
-        diceware.validateAndAssignInputParameters(new String[]{"1", VALID_FILE_NAME});
-
-        assertThat(diceware.minPasswordLength).isEqualTo(1);
-        assertThat(diceware.wordListFile.getAbsolutePath()).isEqualTo(VALID_FILE_NAME);
-    }
-
-    @Test
-    public void shouldThrowException_forInvalidFile() throws IOException, InvalidWordCountException {
-        diceware.wordListFile = new File(INVALID_FILE_NAME);
-
-        Throwable thrown = catchThrowable(() -> diceware.readWordList());
-
-        assertThat(thrown).isInstanceOf(InvalidWordCountException.class)
-                .hasMessageStartingWith(Diceware.INVALID_WORD_COUNT);
-    }
-
-    @Test
-    public void shouldReadWordList_forExistingFile() throws IOException, InvalidWordCountException {
-        diceware.wordListFile = new File(VALID_FILE_NAME);
-
-        diceware.readWordList();
-
-        assertThat(diceware.codeToWord).containsKeys("11111", "11112", "11113", "11114", "11115", "11116");
-        assertThat(diceware.codeToWord).containsValues("abacus", "abdomen", "abdominal", "abide", "abiding", "ability");
-    }
-
-    @Test
-    public void shouldGenerateValidCode() {
-        String code = diceware.generateCode();
-
-        assertThat(CODE_PATTERN.matcher(code).find()).isTrue();
+    private void assertErrorAndUsagePrinted() {
+        assertThat(outputBuffer).startsWith("Error: message");
+        assertThat(outputBuffer).contains("Usage:");
     }
 
 }
