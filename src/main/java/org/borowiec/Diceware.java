@@ -18,7 +18,7 @@ public class Diceware {
     private static final String WORD_LIST_FILE_NAME_PARAM_NAME = "word_list_file_name";
 
     private static final int WORD_COUNT = 7776;
-    private static final int CODE_DIGITS = 5;
+    static final int CODE_DIGITS = 5;
 
     private static final Random random = new SecureRandom();
 
@@ -50,34 +50,28 @@ public class Diceware {
         }
     }
 
-    private void printResult(String generatedPassword) {
-        System.out.println("Generated password: " + generatedPassword);
-        System.out.println("Password length: " + generatedPassword.length());
-    }
-
-    String generatePassword() {
-        StringBuilder generatedPassword = new StringBuilder();
-
-        do {
-            String code = generateCode();
-            String word = codeToWord.get(code);
-
-            generatedPassword.append(word);
-        } while (generatedPassword.length() < minPasswordLength);
-
-        return generatedPassword.toString();
-    }
-
-    private String generateCode() {
-        StringBuilder generatedCode = new StringBuilder();
-
-        for (int i = 0; i < CODE_DIGITS; ++i) {
-            int codeDigit = random.nextInt(6) + 1;
-            generatedCode.append(codeDigit);
+    void validateAndAssignInputParameters(String[] args) throws InvalidParameterException {
+        if (args.length != 2) {
+            throw new InvalidParameterException(INVALID_NUMBER_OF_PARAMETERS);
         }
 
-        return generatedCode.toString();
+        try {
+            minPasswordLength = Integer.parseInt(args[0]);
+        } catch (NumberFormatException e) {
+            throw new InvalidParameterException(MIN_PASSWORD_LENGTH_NOT_A_NUMBER);
+        }
+
+        String wordlistFileName = args[1];
+        if (wordlistFileName == null || wordlistFileName.trim().length() == 0) {
+            throw new InvalidParameterException(FILE_NAME_IS_EMPTY);
+        }
+
+        wordListFile = new File(wordlistFileName);
+        if (!wordListFile.isFile()) {
+            throw new InvalidParameterException(NOT_A_FILE + wordlistFileName);
+        }
     }
+
 
     void readWordList() throws IOException, InvalidWordCountException {
         BufferedReader reader = new BufferedReader(
@@ -99,26 +93,33 @@ public class Diceware {
         }
     }
 
-    void validateAndAssignInputParameters(String[] args) throws InvalidParameterException {
-        if (args.length != 2) {
-            throw new InvalidParameterException(INVALID_NUMBER_OF_PARAMETERS);
+    private String generatePassword() {
+        StringBuilder generatedPassword = new StringBuilder();
+
+        do {
+            String code = generateCode();
+            String word = codeToWord.get(code);
+
+            generatedPassword.append(word);
+        } while (generatedPassword.length() < minPasswordLength);
+
+        return generatedPassword.toString();
+    }
+
+    String generateCode() {
+        StringBuilder generatedCode = new StringBuilder();
+
+        for (int i = 0; i < CODE_DIGITS; ++i) {
+            int codeDigit = random.nextInt(6) + 1;
+            generatedCode.append(codeDigit);
         }
 
-        try {
-            minPasswordLength = Integer.parseInt(args[0]);
-        } catch (NumberFormatException e) {
-            throw new InvalidParameterException(MIN_PASSWORD_LENGTH_NOT_A_NUMBER);
-        }
+        return generatedCode.toString();
+    }
 
-        String wordlistFileName = args[1];
-        if (wordlistFileName == null || wordlistFileName.trim().length() == 0) {
-            throw new InvalidParameterException(FILE_NAME_IS_EMPTY);
-        }
-
-        wordListFile = new File(wordlistFileName);
-        if (!wordListFile.isFile()) {
-            throw new InvalidParameterException(NOT_A_FILE + wordlistFileName);
-        }
+    private void printResult(String generatedPassword) {
+        System.out.println("Generated password: " + generatedPassword);
+        System.out.println("Password length: " + generatedPassword.length());
     }
 
     private void printUsage() {

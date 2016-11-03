@@ -6,6 +6,7 @@ import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.regex.Pattern;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowable;
@@ -14,6 +15,8 @@ public class DicewareTest {
 
     private static final String VALID_FILE_NAME = DicewareTest.class.getClassLoader().getResource("eff_large_wordlist.txt").getPath();
     private static final String INVALID_FILE_NAME = DicewareTest.class.getClassLoader().getResource("example_word_list.txt").getPath();
+
+    private static final Pattern CODE_PATTERN = Pattern.compile("^[1-6]{" + Diceware.CODE_DIGITS + "}");
 
     private Diceware diceware = new Diceware();
 
@@ -107,6 +110,13 @@ public class DicewareTest {
 
         assertThat(diceware.codeToWord).containsKeys("11111", "11112", "11113", "11114", "11115", "11116");
         assertThat(diceware.codeToWord).containsValues("abacus", "abdomen", "abdominal", "abide", "abiding", "ability");
+    }
+
+    @Test
+    public void shouldGenerateValidCode() {
+        String code = diceware.generateCode();
+
+        assertThat(CODE_PATTERN.matcher(code).find()).isTrue();
     }
 
 }
