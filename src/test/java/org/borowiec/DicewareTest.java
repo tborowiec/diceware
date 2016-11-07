@@ -3,16 +3,17 @@ package org.borowiec;
 import org.borowiec.exception.InvalidParameterException;
 import org.borowiec.exception.InvalidWordCountException;
 import org.borowiec.generator.DicewarePasswordGenerator;
-import org.borowiec.reader.DicewareWordListFileReader;
+import org.borowiec.reader.DicewareWordListReader;
 import org.borowiec.validator.DicewareArgsValidator;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -26,7 +27,7 @@ public class DicewareTest {
     @Mock
     private DicewareArgsValidator argsValidator;
     @Mock
-    private DicewareWordListFileReader wordListFileReader;
+    private DicewareWordListReader wordListReader;
     @Mock
     private DicewarePasswordGenerator passwordGenerator;
 
@@ -46,7 +47,7 @@ public class DicewareTest {
 
         System.setOut(printStream);
 
-        diceware = new Diceware(argsValidator, wordListFileReader, passwordGenerator);
+        diceware = new Diceware(argsValidator, wordListReader, passwordGenerator);
     }
 
     @Test
@@ -60,7 +61,7 @@ public class DicewareTest {
 
     @Test
     public void shouldPrintErrorAndUsage_whenIOException() throws Exception {
-        when(wordListFileReader.read(any(File.class))).thenThrow(new IOException("message"));
+        when(wordListReader.read(anyString())).thenThrow(new IOException("message"));
 
         diceware.run(new String[]{"1", "filename"});
 
@@ -69,11 +70,23 @@ public class DicewareTest {
 
     @Test
     public void shouldPrintErrorAndUsage_whenInvalidWordCountException() throws Exception {
-        when(wordListFileReader.read(any(File.class))).thenThrow(new InvalidWordCountException("message"));
+        when(wordListReader.read(anyString())).thenThrow(new InvalidWordCountException("message"));
 
         diceware.run(new String[]{"1", "filename"});
 
         assertErrorAndUsagePrinted();
+    }
+
+    @Test
+    public void shouldUseDefaultFileAndPrintResult_whenNoFileNameProvided() throws Exception {
+        when(passwordGenerator.generatePassword(anyInt(), anyMapOf(String.class, String.class))).thenReturn("test");
+        ArgumentCaptor<InputStream> captor = ArgumentCaptor.forClass(InputStream.class);
+
+        diceware.run(new String[]{"1"});
+
+        verify(wordListReader).read(captor.capture());
+        assertThat(captor.getValue()).isEqualTo(Diceware.DEFAULT_WORD_LIST_INPUT_STREAM);
+        assertThat(outputBuffer.toString()).isEqualTo("Generated password: test\nPassword length: 4\n");
     }
 
     @Test

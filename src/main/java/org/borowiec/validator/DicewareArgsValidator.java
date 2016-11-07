@@ -13,7 +13,7 @@ public class DicewareArgsValidator {
     static final String NOT_A_FILE = "Not a file: ";
 
     public void validate(String[] args) throws InvalidParameterException {
-        if (args.length != 2) {
+        if (args.length < 1 || args.length > 2) {
             throw new InvalidParameterException(INVALID_NUMBER_OF_PARAMETERS);
         }
 
@@ -24,14 +24,16 @@ public class DicewareArgsValidator {
             throw new InvalidParameterException(MIN_PASSWORD_LENGTH_NOT_A_NUMBER);
         }
 
-        String wordlistFileName = args[1];
-        if (wordlistFileName == null || wordlistFileName.trim().length() == 0) {
-            throw new InvalidParameterException(FILE_NAME_IS_EMPTY);
-        }
+        if (args.length == 2) {
+            String wordlistFileName = args[1];
+            if (wordlistFileName == null || wordlistFileName.trim().length() == 0) {
+                throw new InvalidParameterException(FILE_NAME_IS_EMPTY);
+            }
 
-        File wordListFile = new File(wordlistFileName);
-        if (!wordListFile.isFile()) {
-            throw new InvalidParameterException(NOT_A_FILE + wordlistFileName);
+            File wordListFile = new File(wordlistFileName);
+            if (!wordListFile.isFile()) {
+                throw new InvalidParameterException(NOT_A_FILE + wordlistFileName);
+            }
         }
     }
 

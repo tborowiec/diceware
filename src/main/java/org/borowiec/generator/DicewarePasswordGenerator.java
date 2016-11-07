@@ -4,9 +4,9 @@ import java.security.SecureRandom;
 import java.util.Map;
 import java.util.Random;
 
-public class DicewarePasswordGenerator {
+import static org.borowiec.DicewareConstants.CODE_DIGITS;
 
-    static final int CODE_DIGITS = 5;
+public class DicewarePasswordGenerator {
 
     private final Random random;
 

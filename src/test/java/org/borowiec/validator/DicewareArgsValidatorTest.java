@@ -21,14 +21,6 @@ public class DicewareArgsValidatorTest {
     }
 
     @Test
-    public void shouldThrowException_whenOneElementArgsArray() throws InvalidParameterException {
-        Throwable thrown = catchThrowable(() -> validator.validate(new String[]{"1"}));
-
-        assertThat(thrown).isInstanceOf(InvalidParameterException.class)
-                .hasMessage(DicewareArgsValidator.INVALID_NUMBER_OF_PARAMETERS);
-    }
-
-    @Test
     public void shouldThrowException_whenMoreThanTwoElementArgsArray() throws InvalidParameterException {
         Throwable thrown = catchThrowable(() -> validator.validate(new String[]{"1", "2", "3"}));
 
@@ -74,6 +66,11 @@ public class DicewareArgsValidatorTest {
 
         assertThat(thrown).isInstanceOf(InvalidParameterException.class)
                 .hasMessageStartingWith(DicewareArgsValidator.NOT_A_FILE);
+    }
+
+    @Test
+    public void shouldNotThrowException_whenValidArgument() throws InvalidParameterException {
+        validator.validate(new String[]{"1"});
     }
 
     @Test

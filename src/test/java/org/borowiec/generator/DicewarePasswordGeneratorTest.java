@@ -4,16 +4,14 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.Test;
 
 import java.util.Map;
-import java.util.regex.Pattern;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.borowiec.DicewareConstants.codePattern;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class DicewarePasswordGeneratorTest {
-
-    private static final Pattern CODE_PATTERN = Pattern.compile("^[1-6]{" + DicewarePasswordGenerator.CODE_DIGITS + "}");
 
     private DicewarePasswordGenerator passwordGenerator = new DicewarePasswordGenerator();
 
@@ -21,7 +19,7 @@ public class DicewarePasswordGeneratorTest {
     public void shouldGenerateValidCode() {
         String code = passwordGenerator.generateCode();
 
-        assertThat(CODE_PATTERN.matcher(code).find()).isTrue();
+        assertThat(codePattern.matcher(code).find()).isTrue();
     }
 
     @Test
